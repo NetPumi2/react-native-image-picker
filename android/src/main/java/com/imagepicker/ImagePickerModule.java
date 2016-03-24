@@ -16,6 +16,7 @@ import android.provider.MediaStore;
 import android.util.Base64;
 import android.widget.ArrayAdapter;
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Arguments;
@@ -499,7 +500,7 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
             ? widthRatio
             : heightRatio;
 
-    Matrix matrix = new Matrix();
+    Matrix matrix = getOrientationMatrix(realPath);
     matrix.postRotate(angle);
     matrix.postScale((float) ratio, (float) ratio);
 
@@ -613,6 +614,71 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
      return true;
    }else{
      return false;
+   }
+ }
+
+ private Matrix getOrientationMatrix(String path) {
+   int orientation;
+   try {
+     if(path==null){
+       return null;
+     }
+     BitmapFactory.Options o = new BitmapFactory.Options();
+     o.inJustDecodeBounds = true;
+     final int REQUIRED_SIZE = 70;
+     int width_tmp = o.outWidth, height_tmp = o.outHeight;
+     int scale = 4;
+     while (true) {
+       if (width_tmp / 2 < REQUIRED_SIZE || height_tmp / 2 < REQUIRED_SIZE){
+         break;
+       }
+       width_tmp /= 2;
+       height_tmp /= 2;
+       scale++;
+     }
+     BitmapFactory.Options o2 = new BitmapFactory.Options();
+     o2.inSampleSize=scale;
+     ExifInterface exif = new ExifInterface(path);
+     orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
+     Log.e("ORIENTATION","IS> "+orientation);
+     Matrix matrix = new Matrix();
+     switch (orientation) {
+       case ExifInterface.ORIENTATION_NORMAL:
+         return matrix;
+       case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+         matrix.setScale(-1, 1);
+         return matrix;
+
+       case ExifInterface.ORIENTATION_ROTATE_180:
+         matrix.setRotate(180);
+         return matrix;
+       case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+         matrix.setRotate(180);
+         matrix.postScale(-1, 1);
+         return matrix;
+       case ExifInterface.ORIENTATION_TRANSPOSE:
+         matrix.setRotate(90);
+         matrix.postScale(-1, 1);
+         return matrix;
+       case ExifInterface.ORIENTATION_ROTATE_90:
+         matrix.setRotate(90);
+         return matrix;
+       case ExifInterface.ORIENTATION_TRANSVERSE:
+         matrix.setRotate(-90);
+         matrix.postScale(-1, 1);
+         return matrix;
+       case ExifInterface.ORIENTATION_ROTATE_270:
+         matrix.setRotate(-90);
+         return matrix;
+       default:
+         return matrix;
+     }
+   }
+   catch (IOException e) {
+     Log.e("ORIENTATION","IOExcaption " + e.toString());
+     Matrix m = new Matrix();
+     m.setRotate(90);
+     return m;
    }
  }
 

@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.widget.ArrayAdapter;
+import android.content.pm.PackageManager;
 
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Arguments;
@@ -98,7 +99,8 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
 
     if (options.hasKey("takePhotoButtonTitle")
             && options.getString("takePhotoButtonTitle") != null
-            && !options.getString("takePhotoButtonTitle").isEmpty()) {
+            && !options.getString("takePhotoButtonTitle").isEmpty()
+            && isCameraAvailable()) {
       titles.add(options.getString("takePhotoButtonTitle"));
       actions.add("photo");
     }
@@ -604,4 +606,14 @@ public class ImagePickerModule extends ReactContextBaseJavaModule implements Act
       videoDurationLimit = options.getInt("durationLimit");
     }
   }
+
+  private boolean isCameraAvailable(){
+   PackageManager packageManager = mReactContext.getPackageManager();
+   if (packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+     return true;
+   }else{
+     return false;
+   }
+ }
+
 }
